@@ -38,6 +38,14 @@
 
     const TITLE_FONT_SIZE = 50;
 
+    // Align all elements with KEY_BOX_Y_CENTERED
+    const CIRCLE_Y = KEY_BOX_Y_CENTERED;
+    const SLIDER_Y = KEY_BOX_Y_CENTERED;
+    const SPINNER_Y = KEY_BOX_Y_CENTERED;
+    const PLAYHEAD_Y_START = KEY_BOX_Y_CENTERED - 45;
+    const PLAYHEAD_Y_END = KEY_BOX_Y_CENTERED + 45;
+    const TITLE_Y = KEY_BOX_Y_CENTERED - 20;
+
     const sliderBuffer = document.createElement('canvas');
     const sctx = sliderBuffer.getContext('2d');
 
@@ -540,7 +548,7 @@
 
         if (isMissed && hasHitCircleTexture && hitCircleImg) {
             const w = hitCircleImg.width * TEXTURE_SCALE, h = hitCircleImg.height * TEXTURE_SCALE;
-            const dx = posX - w/2, dy = 50 - h/2;
+            const dx = posX - w/2, dy = CIRCLE_Y - h/2;
             ctx.drawImage(hitCircleImg, dx, dy, w, h);
             if (hitCircleOverlayImg && hitCircleOverlayImg.complete) ctx.drawImage(hitCircleOverlayImg, dx, dy, w, h);
             ctx.globalAlpha = 1.0;
@@ -551,7 +559,7 @@
         const tintedCanvas = activeTinted[colorIndex % activeTinted.length];
         if (hasHitCircleTexture && tintedCanvas) {
             const w = tintedCanvas.width * TEXTURE_SCALE, h = tintedCanvas.height * TEXTURE_SCALE;
-            const dx = posX - w/2, dy = 50 - h/2;
+            const dx = posX - w/2, dy = CIRCLE_Y - h/2;
             ctx.drawImage(tintedCanvas, dx, dy, w, h);
             if (hitCircleOverlayImg && hitCircleOverlayImg.complete) ctx.drawImage(hitCircleOverlayImg, dx, dy, w, h);
         } else {
@@ -561,7 +569,7 @@
                 const col = (useBeatmapCombos && beatmapComboColors.length ? beatmapComboColors : DEFAULT_COMBO_COLORS)[colorIndex % 4];
                 ctx.fillStyle = `rgb(${col.r},${col.g},${col.b})`;
             }
-            ctx.beginPath(); ctx.arc(posX, 50, 10, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(posX, CIRCLE_Y, 10, 0, Math.PI*2); ctx.fill();
         }
         ctx.globalAlpha = 1.0;
     }
@@ -681,7 +689,7 @@
                 sctx.beginPath(); sctx.moveTo(sP.x, sP.y); sctx.lineTo(eP.x, eP.y); sctx.stroke();
                 
                 sctx.globalAlpha = 1; sctx.globalCompositeOperation = 'source-over';
-                ctx.drawImage(sliderBuffer, 0, 0, sw, trackDiam * 2, xStart - trackDiam, 50 - trackDiam, sw, trackDiam * 2);
+                ctx.drawImage(sliderBuffer, 0, 0, sw, trackDiam * 2, xStart - trackDiam, SLIDER_Y - trackDiam, sw, trackDiam * 2);
 
                 let currentBeatLength = 600;
                 for (let tp of timingPoints) {
@@ -711,11 +719,11 @@
                             const tickScaleFactor = TEXTURE_SCALE * 0.65;
                             const tickW = tickCanvas.width * tickScaleFactor;
                             const tickH = tickCanvas.height * tickScaleFactor;
-                            ctx.drawImage(tickCanvas, tickX - tickW / 2, 50 - tickH / 2, tickW, tickH);
+                            ctx.drawImage(tickCanvas, tickX - tickW / 2, SLIDER_Y - tickH / 2, tickW, tickH);
                         } else {
                             ctx.fillStyle = note.isMissed ? `rgba(100,100,100,0.5)` : `rgb(${col.r},${col.g},${col.b})`;
                             ctx.beginPath();
-                            ctx.arc(tickX, 50, 5.5, 0, Math.PI * 2);
+                            ctx.arc(tickX, SLIDER_Y, 5.5, 0, Math.PI * 2);
                             ctx.fill();
                         }
 
@@ -724,7 +732,7 @@
                 }
             } else if (note.type === 'spinner') {
                 ctx.fillStyle = note.isMissed ? `rgba(100,100,100,0.3)` : `rgba(${col.r},${col.g},${col.b},0.6)`;
-                ctx.fillRect(xStart, 50 - SPINNER_BAR_HEIGHT/2, xEnd - xStart, SPINNER_BAR_HEIGHT);
+                ctx.fillRect(xStart, SPINNER_Y - SPINNER_BAR_HEIGHT/2, xEnd - xStart, SPINNER_BAR_HEIGHT);
             }
 
             if (note.type === 'circle' || note.type === 'slider') {
@@ -779,7 +787,7 @@
         }
 
         ctx.strokeStyle = '#0ff'; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(playheadX, 10); ctx.lineTo(playheadX, 100); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(playheadX, PLAYHEAD_Y_START); ctx.lineTo(playheadX, PLAYHEAD_Y_END); ctx.stroke();
         ctx.fillStyle = '#0ff';
         
         // New title display logic
@@ -870,7 +878,7 @@
         ctx.shadowColor = 'rgba(0,0,0,0.8)';
         
         const totalHeight = titleLines.length * fontSize * 1.2;
-        const startY = 65 - (totalHeight / 2) + fontSize * 0.6;
+        const startY = TITLE_Y - (totalHeight / 2) + fontSize * 0.6;
         
         for (let i = 0; i < titleLines.length; i++) {
             ctx.fillText(titleLines[i], 15, startY + (i * fontSize * 1.2));
