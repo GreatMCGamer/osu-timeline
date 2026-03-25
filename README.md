@@ -154,5 +154,5 @@ To use this visualization:
 
 ## Dependencies
 
-- Modern web browser with Canvas and WebSocket support
+- OBS
 - tosu/gosumemory running locally on port 24050
