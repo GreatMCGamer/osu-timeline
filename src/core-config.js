@@ -80,6 +80,9 @@ let defaultTintedSliderTicks = [];
 let beatmapTintedSliderTicks = [];
 let hasSliderTickTexture = false;
 
+// Flag to track if a new beatmap was detected (for texture loading optimization)
+let isNewBeatmap = false;
+
 const DEFAULT_COMBO_COLORS = [
     { r: 255, g: 192, b: 0 },
     { r: 0,   g: 202, b: 0 },

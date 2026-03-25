@@ -1,7 +1,10 @@
 // ──────── BEATMAP PARSER ────────
 // Fetches and decodes .osu files to build the note timeline.
 
-async function fetchBeatmap() {
+// Variable to store the previous beatmap file path
+let previousBeatmapFile = '';
+
+async function fetchBeatmap(directPath) {
     try {
         // Appending the checksum query parameter completely prevents the browser 
         // from caching the old beatmap file, fixing the timeline freezing issue.
@@ -16,10 +19,42 @@ async function fetchBeatmap() {
         beatmapOD = result.od;
         beatmapSliderTickRate = result.sliderTickRate || 1.0;
         
+        // Set the isNewBeatmap flag based on whether we detect a new beatmap
+        isNewBeatmap = isNewBeatmapCheck(directPath);
+        
         loadTextures();
     } catch(e) { 
         console.error("Failed to parse or load beatmap file:", e); 
     }
+}
+
+/**
+ * Checks if the current beatmap file is different from the previous one
+ * @returns {boolean} True if the beatmap file has changed, false otherwise
+ */
+function isNewBeatmapCheck(directPath) {
+    // Check if directPath.beatmapFile exists and is different from previous beatmap file
+    if (directPath && directPath.beatmapFile) {
+        const currentBeatmapFile = directPath.beatmapFile;
+        
+        // If previousBeatmapFile is empty, this is the first beatmap
+        if (previousBeatmapFile === '') {
+            previousBeatmapFile = currentBeatmapFile;
+            return true;
+        }
+        
+        // Compare the current beatmap file with the previous one
+        if (currentBeatmapFile !== previousBeatmapFile) {
+            previousBeatmapFile = currentBeatmapFile;
+            return true;
+        }
+        
+        // Beatmap file is the same
+        return false;
+    }
+    
+    // If directPath or beatmapFile is not available, return false
+    return false;
 }
 
 function parseOsuFile(osuText) {

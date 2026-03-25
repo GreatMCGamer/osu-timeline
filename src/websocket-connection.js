@@ -17,7 +17,7 @@ function connect() {
             if (cs && cs !== lastChecksum) {
                 lastChecksum = cs;
                 resetTimelineState();
-                fetchBeatmap();
+                fetchBeatmap(data.beatmap);
             }
             if (data.settings?.skin?.colors) {
                 if (data.settings.skin.colors.sliderTrackOverride) sliderTrackOverride = data.settings.skin.colors.sliderTrackOverride;

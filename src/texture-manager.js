@@ -2,8 +2,11 @@
 // Loads skin assets, handles @2x fallbacks, and creates color-tinted variations.
 
 function loadTextures() {
-    hasHitCircleTexture = false;
-    hasSliderTickTexture = false;
+    // Only reset flags if we have a new beatmap (to prevent infinite reload loops)
+    if (isNewBeatmap) {
+        hasHitCircleTexture = false;
+        hasSliderTickTexture = false;
+    }
 
     const tosuUrl = 'http://127.0.0.1:24050/files/skin/';
     
@@ -62,6 +65,11 @@ function loadTextures() {
     loadImageWithFallback(hitCircleImg, tosuUrl + 'hitcircle@2x.png', tosuUrl + 'hitcircle.png');
     loadImageWithFallback(hitCircleOverlayImg, tosuUrl + 'hitcircleoverlay@2x.png', tosuUrl + 'hitcircleoverlay.png');
     loadImageWithFallback(sliderTickImg, tosuUrl + 'sliderscorepoint@2x.png', tosuUrl + 'sliderscorepoint.png');
+    
+    // Reset the isNewBeatmap flag after texture loading is initiated
+    if (isNewBeatmap) {
+        isNewBeatmap = false;
+    }
 }
 
 function createTintedVersions() {
