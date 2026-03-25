@@ -23,17 +23,9 @@ const KEY_BOX_SIZE = 24;
 const KEY_BOX_Y = 25;         // Y position of the first lane (k1/m1)
 const KEY_BOX_SPACING = 30;   // Vertical space between lane 1 and lane 2
 
-const KEY_BOX_Y_CENTERED = canvas.height / 2;
+const Y_CENTERED = canvas.height / 2;
 
 const TITLE_FONT_SIZE = 50;
-
-// Align all elements with KEY_BOX_Y_CENTERED
-const CIRCLE_Y = KEY_BOX_Y_CENTERED;
-const SLIDER_Y = KEY_BOX_Y_CENTERED;
-const SPINNER_Y = KEY_BOX_Y_CENTERED;
-const PLAYHEAD_Y_START = KEY_BOX_Y_CENTERED - 45;
-const PLAYHEAD_Y_END = KEY_BOX_Y_CENTERED + 45;
-const TITLE_Y = KEY_BOX_Y_CENTERED - 20;
 
 const sliderBuffer = document.createElement('canvas');
 const sctx = sliderBuffer.getContext('2d');

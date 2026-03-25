@@ -19,7 +19,7 @@ function drawKeyVisualization() {
         let xEnd = playheadX + (eTime - lastCommonLiveTime || 0) * scale;
 
         let lane = (stroke.key === 'k1' || stroke.key === 'm1') ? 0 : 1;
-        let y = KEY_BOX_Y_CENTERED - (KEY_BOX_SPACING / 2) + (lane * KEY_BOX_SPACING);
+        let y = Y_CENTERED - (KEY_BOX_SPACING / 2) + (lane * KEY_BOX_SPACING);
 
         let drawXStart = Math.min(xStart, maxLineX);
         let drawXEnd = Math.min(xEnd, maxLineX);
@@ -35,7 +35,7 @@ function drawKeyVisualization() {
         if (lane === 0 && (keyBoxStates['k1'] || keyBoxStates['m1'])) isDown = true;
         if (lane === 1 && (keyBoxStates['k2'] || keyBoxStates['m2'])) isDown = true;
 
-        let y = KEY_BOX_Y_CENTERED - (KEY_BOX_SPACING / 2) + (lane * KEY_BOX_SPACING);
+        let y = Y_CENTERED - (KEY_BOX_SPACING / 2) + (lane * KEY_BOX_SPACING);
         let size = KEY_BOX_SIZE;
         let boxX = playheadX;
         let boxY = y - size / 2;

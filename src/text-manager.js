@@ -42,7 +42,7 @@ function renderBeatmapTitle() {
     ctx.shadowColor = 'rgba(0,0,0,0.8)';
 
     const totalHeight = titleLines.length * fontSize * lineHeightFactor;
-    const startY = TITLE_Y - (totalHeight / 2) + fontSize * 0.6;
+    const startY = Y_CENTERED - (totalHeight / 2) + fontSize * 0.6;
 
     for (let i = 0; i < titleLines.length; i++) {
         ctx.fillText(titleLines[i], 15, startY + i * fontSize * lineHeightFactor);

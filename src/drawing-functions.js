@@ -8,7 +8,7 @@ function drawHitCircle(posX, colorIndex, isMissed = false) {
 
     if (isMissed && hasHitCircleTexture && hitCircleImg) {
         const w = hitCircleImg.width * TEXTURE_SCALE, h = hitCircleImg.height * TEXTURE_SCALE;
-        const dx = posX - w/2, dy = CIRCLE_Y - h/2;
+        const dx = posX - w/2, dy = Y_CENTERED - h/2;
         ctx.drawImage(hitCircleImg, dx, dy, w, h);
         if (hitCircleOverlayImg && hitCircleOverlayImg.complete) ctx.drawImage(hitCircleOverlayImg, dx, dy, w, h);
         ctx.globalAlpha = 1.0;
@@ -19,7 +19,7 @@ function drawHitCircle(posX, colorIndex, isMissed = false) {
     const tintedCanvas = activeTinted[colorIndex % activeTinted.length];
     if (hasHitCircleTexture && tintedCanvas) {
         const w = tintedCanvas.width * TEXTURE_SCALE, h = tintedCanvas.height * TEXTURE_SCALE;
-        const dx = posX - w/2, dy = CIRCLE_Y - h/2;
+        const dx = posX - w/2, dy = Y_CENTERED - h/2;
         ctx.drawImage(tintedCanvas, dx, dy, w, h);
         if (hitCircleOverlayImg && hitCircleOverlayImg.complete) ctx.drawImage(hitCircleOverlayImg, dx, dy, w, h);
     } else {
@@ -29,7 +29,7 @@ function drawHitCircle(posX, colorIndex, isMissed = false) {
             const col = (useBeatmapCombos && beatmapComboColors.length ? beatmapComboColors : DEFAULT_COMBO_COLORS)[colorIndex % 4];
             ctx.fillStyle = `rgb(${col.r},${col.g},${col.b})`;
         }
-        ctx.beginPath(); ctx.arc(posX, CIRCLE_Y, 10, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(posX, Y_CENTERED, 10, 0, Math.PI*2); ctx.fill();
     }
     ctx.globalAlpha = 1.0;
 }
@@ -149,7 +149,7 @@ function draw() {
             sctx.beginPath(); sctx.moveTo(sP.x, sP.y); sctx.lineTo(eP.x, eP.y); sctx.stroke();
             
             sctx.globalAlpha = 1; sctx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(sliderBuffer, 0, 0, sw, trackDiam * 2, xStart - trackDiam, SLIDER_Y - trackDiam, sw, trackDiam * 2);
+            ctx.drawImage(sliderBuffer, 0, 0, sw, trackDiam * 2, xStart - trackDiam, Y_CENTERED - trackDiam, sw, trackDiam * 2);
 
             let currentBeatLength = 600;
             for (let tp of timingPoints) {
@@ -179,11 +179,11 @@ function draw() {
                         const tickScaleFactor = TEXTURE_SCALE * 0.65;
                         const tickW = tickCanvas.width * tickScaleFactor;
                         const tickH = tickCanvas.height * tickScaleFactor;
-                        ctx.drawImage(tickCanvas, tickX - tickW / 2, SLIDER_Y - tickH / 2, tickW, tickH);
+                        ctx.drawImage(tickCanvas, tickX - tickW / 2, Y_CENTERED - tickH / 2, tickW, tickH);
                     } else {
                         ctx.fillStyle = note.isMissed ? `rgba(100,100,100,0.5)` : `rgb(${col.r},${col.g},${col.b})`;
                         ctx.beginPath();
-                        ctx.arc(tickX, SLIDER_Y, 5.5, 0, Math.PI * 2);
+                        ctx.arc(tickX, Y_CENTERED, 5.5, 0, Math.PI * 2);
                         ctx.fill();
                     }
 
@@ -192,7 +192,7 @@ function draw() {
             }
         } else if (note.type === 'spinner') {
             ctx.fillStyle = note.isMissed ? `rgba(100,100,100,0.3)` : `rgba(${col.r},${col.g},${col.b},0.6)`;
-            ctx.fillRect(xStart, SPINNER_Y - SPINNER_BAR_HEIGHT/2, xEnd - xStart, SPINNER_BAR_HEIGHT);
+            ctx.fillRect(xStart, Y_CENTERED - SPINNER_BAR_HEIGHT/2, xEnd - xStart, SPINNER_BAR_HEIGHT);
         }
 
         if (note.type === 'circle' || note.type === 'slider') {
@@ -218,7 +218,7 @@ function draw() {
         let xEnd = playheadX + (eTime - currentTime) * scale;
 
         let lane = (stroke.key === 'k1' || stroke.key === 'm1') ? 0 : 1;
-        let y = KEY_BOX_Y_CENTERED - (KEY_BOX_SPACING / 2) + (lane * KEY_BOX_SPACING);
+        let y = Y_CENTERED - (KEY_BOX_SPACING / 2) + (lane * KEY_BOX_SPACING);
 
         let drawXStart = Math.min(xStart, maxLineX);
         let drawXEnd = Math.min(xEnd, maxLineX);
@@ -234,7 +234,7 @@ function draw() {
         if (lane === 0 && (keyBoxStates['k1'] || keyBoxStates['m1'])) isDown = true;
         if (lane === 1 && (keyBoxStates['k2'] || keyBoxStates['m2'])) isDown = true;
 
-        let y = KEY_BOX_Y_CENTERED - (KEY_BOX_SPACING / 2) + (lane * KEY_BOX_SPACING);
+        let y = Y_CENTERED - (KEY_BOX_SPACING / 2) + (lane * KEY_BOX_SPACING);
         let size = KEY_BOX_SIZE;
         let boxX = playheadX;
         let boxY = y - size / 2;
@@ -247,7 +247,7 @@ function draw() {
     }
 
     ctx.strokeStyle = '#0ff'; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(playheadX, PLAYHEAD_Y_START); ctx.lineTo(playheadX, PLAYHEAD_Y_END); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(playheadX, Y_CENTERED - 45); ctx.lineTo(playheadX, Y_CENTERED + 45); ctx.stroke();
     ctx.fillStyle = '#0ff';
     
     // Render beatmap title
