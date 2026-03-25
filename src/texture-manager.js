@@ -1,35 +1,8 @@
 // ──────── TEXTURE MANAGER ────────
 // Loads skin assets, handles @2x fallbacks, and creates color-tinted variations.
 
-// Track if textures have already been loaded for the current beatmap
-let texturesLoaded = false;
-
-// Track if we're currently loading textures (to prevent race conditions)
-let isTextureLoading = false;
-
-// Track if we've attempted to load textures for the current beatmap (to prevent repeated failed attempts)
-let textureLoadAttempted = false;
-
 // Function to load textures with fallback support for @2x and normal variants
 function loadTextures() {
-    // Only load textures if they haven't been loaded already for this beatmap
-    if (texturesLoaded) {
-        return;
-    }
-    
-    // Prevent multiple concurrent texture loading attempts
-    if (isTextureLoading) {
-        return;
-    }
-    
-    // Prevent repeated failed attempts to load textures
-    if (textureLoadAttempted) {
-        return;
-    }
-    
-    // Set loading flag to prevent race conditions
-    isTextureLoading = true;
-    
     hasHitCircleTexture = false;
     hasSliderTickTexture = false;
 
@@ -42,12 +15,7 @@ function loadTextures() {
             if (!src.includes('@2x')) {
                 upscaleTextureTo2x(image);
             }
-            // Only mark textures as loaded if we successfully loaded at least one texture
-            if (src.includes('hitcircle')) {
-                hasHitCircleTexture = true;
-            } else if (src.includes('sliderscorepoint')) {
-                hasSliderTickTexture = true;
-            }
+            hasHitCircleTexture = true; 
             createTintedVersions(); 
         };
         image.onerror = () => {
@@ -55,16 +23,8 @@ function loadTextures() {
             if (src.includes('@2x')) {
                 image.src = fallbackSrc;
             } else {
-                // If normal variant also fails, mark this texture as failed to load
-                if (src.includes('hitcircle')) {
-                    hasHitCircleTexture = false;
-                } else if (src.includes('sliderscorepoint')) {
-                    hasSliderTickTexture = false;
-                }
-                // Mark that we've attempted to load textures for this beatmap
-                textureLoadAttempted = true;
-                isTextureLoading = false;
-                return;
+                // If normal variant also fails, reset to default
+                image.src = '';
             }
         };
         image.src = src;
@@ -101,14 +61,10 @@ function loadTextures() {
     // Load slider tick textures with fallback support
     sliderTickImg = new Image();
     loadImageWithFallback(sliderTickImg, tosuUrl + 'sliderscorepoint@2x.png', tosuUrl + 'sliderscorepoint.png');
-    
-    // Mark that we've attempted to load textures for this beatmap
-    textureLoadAttempted = true;
-    isTextureLoading = false;
 }
 
 function createTintedVersions() {
-    if (hitCircleImg && hitCircleImg.complete) {
+    if (hitCircleImg.complete) {
         defaultTintedHitCircles = DEFAULT_COMBO_COLORS.map(c => tintImage(hitCircleImg, `rgb(${c.r},${c.g},${c.b})`));
         if (beatmapComboColors.length) beatmapTintedHitCircles = beatmapComboColors.map(c => tintImage(hitCircleImg, `rgb(${c.r},${c.g},${c.b})`));
     }
@@ -124,11 +80,4 @@ function tintImage(baseImg, color) {
     const ct = c.getContext('2d'); ct.drawImage(baseImg, 0, 0);
     ct.globalCompositeOperation = 'source-atop'; ct.fillStyle = color; ct.fillRect(0, 0, c.width, c.height);
     return c;
-}
-
-// Function to reset texture loading state when a new beatmap is loaded
-function resetTextureLoading() {
-    texturesLoaded = false;
-    isTextureLoading = false;
-    textureLoadAttempted = false;
 }
