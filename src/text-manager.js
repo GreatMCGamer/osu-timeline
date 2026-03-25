@@ -37,18 +37,23 @@ function renderBeatmapTitle() {
     titleLines = bestLines;
 
     // Now render with the optimal size/lines
+    ctx.textBaseline = 'middle';           // ← add this
     ctx.font = `bold ${fontSize}px Arial`;
     ctx.shadowBlur = 8;
     ctx.shadowColor = 'rgba(0,0,0,0.8)';
 
-    const totalHeight = titleLines.length * fontSize * lineHeightFactor;
-    const startY = Y_CENTERED - (totalHeight / 2) + fontSize * 0.6;
+    const lineHeight = fontSize * lineHeightFactor;
+    const totalBlockHeight = (titleLines.length - 1) * lineHeight;   // only the gaps between lines
+
+    let currentY = Y_CENTERED - (totalBlockHeight / 2);
 
     for (let i = 0; i < titleLines.length; i++) {
-        ctx.fillText(titleLines[i], 15, startY + i * fontSize * lineHeightFactor);
+        ctx.fillText(titleLines[i], 15, currentY);
+        currentY += lineHeight;
     }
 
     ctx.shadowBlur = 0;
+    ctx.textBaseline = 'alphabetic';       // reset for the rest of your app if needed
 }
 
 // Greedy word wrapping function
