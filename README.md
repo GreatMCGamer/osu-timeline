@@ -7,7 +7,7 @@ A real-time visualization of osu! beatmaps that displays hit objects, key presse
 The monolithic JavaScript file has been broken down into multiple modular files to improve maintainability and organization:
 
 ```
-osu-timeline/
+osu-timeline-visulizer/
 ├── index.html
 ├── src/
 │   ├── core-config.js
@@ -18,6 +18,7 @@ osu-timeline/
 │   ├── drawing-functions.js
 │   ├── key-visualization.js
 │   ├── miss-logic.js
+│   ├── text-manager.js
 │   └── main-application.js
 └── README.md
 ```
@@ -111,7 +112,17 @@ This file contains all miss detection and timing-related logic:
 - Contains functions for detecting when objects are missed due to timing
 - Implements the logic for updating timeline locking based on hit errors
 
-### 9. `main-application.js`
+### 9. `text-manager.js`
+**Purpose**: Text rendering and title display
+
+This file handles text rendering logic for beatmap titles and other text elements:
+- Renders the beatmap title with dynamic font sizing and text wrapping
+- Implements binary search algorithm to find the optimal font size that fits within constraints
+- Uses greedy word wrapping to properly break text lines
+- Applies visual effects like shadows and bold styling for better readability
+- Manages text positioning and line height calculations
+
+### 10. `main-application.js`
 **Purpose**: Application heartbeat and initialization
 
 This file serves as the main application entry point that ties all components together:
