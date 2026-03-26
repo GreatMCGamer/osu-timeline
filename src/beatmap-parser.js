@@ -1,5 +1,6 @@
 // ──────── BEATMAP PARSER ────────
 // Fetches and decodes .osu files to build the note timeline.
+// Now correctly preserves OD = 0 and OD < 0 (Half-Time / custom maps).
 
 // Variable to store the previous beatmap file path
 let previousBeatmapFile = '';
@@ -85,7 +86,10 @@ function parseOsuFile(osuText) {
                 if (sectionName === 'Difficulty') {
                     if (line.startsWith('SliderMultiplier:')) sliderMult = parseFloat(line.split(':')[1]) || 1.0;
                     if (line.startsWith('SliderTickRate:')) sliderTickRate = parseFloat(line.split(':')[1]) || 1.0;
-                    if (line.startsWith('OverallDifficulty:')) od = parseFloat(line.split(':')[1]) || 8.0;
+                    if (line.startsWith('OverallDifficulty:')) {
+                        const parsedOD = parseFloat(line.split(':')[1]);
+                        od = isNaN(parsedOD) ? 8.0 : parsedOD;   // ← FIXED: now accepts 0 and negative OD
+                    }
                 }
                 else if (sectionName === 'Colours') {
                     if (line.startsWith('Combo')) {

@@ -1,7 +1,6 @@
 // ──────── DRAWING FUNCTIONS ────────
-// Fully scale-aware rendering. 
-// scale = pixels per millisecond (px/ms). 
-// All timing → horizontal positioning now uses this single consistent factor.
+// Fully scale-aware rendering (pxPerMs = scale).
+// OD ≤ 0 (including Half-Time edge cases) now correctly gives LARGER windows.
 
 function drawHitCircle(posX, colorIndex, isMissed = false, diameter = 20) {
     if (posX < -100 || posX > canvas.width + 100) return;
@@ -50,8 +49,6 @@ function draw() {
         ? lockedBaseTime + (now - lockedBaseRealTime) * lockedCurrentSpeed * SPEED_MULTIPLIER 
         : lastCommonLiveTime || 0;
 
-    // ──────── SCALE-AWARE VISIBILITY WINDOWS ────────
-    // pastMs / futureMs = how many milliseconds are visible left/right of the playhead
     const pastMs = playheadX / scale + 200;
     const futureMs = (canvas.width - playheadX) / scale + 200;
 
@@ -60,17 +57,18 @@ function draw() {
         keyStrokes.shift();
     }
 
-    // ──────── HIT WINDOWS (clamped) ────────
-    const hitWindow50 = Math.max(0, 199.5 - (beatmapOD * 10));
+    // ──────── HIT WINDOWS — fully unclamped for OD ≤ 0 ────────
+    let hitWindow50  = 199.5 - (beatmapOD * 10);
+    let hitWindow100 = 139.5 - (beatmapOD * 8);
+    let hitWindow300 = 79.5  - (beatmapOD * 6);
+
     const tosuLeeway = 350; 
     const hitErrorLeeway = 150;
 
-    // ──────── GLOBAL SCALE FACTOR FOR ALL TIMING ELEMENTS ────────
-    // This single value now drives EVERY horizontal position and size
-    const pxPerMs = scale;                                      // explicit name for clarity
-    const judgmentDiameterPx = hitWindow50 * 2 * pxPerMs;      // full 50-window = circle diameter
+    const pxPerMs = scale;
+    const judgmentDiameterPx = Math.max(0, hitWindow50 * 2 * pxPerMs);
 
-    // Miss detection & late key-stroke handling
+    // Miss detection & key-stroke handling
     for (let note of hitObjects) {
         if (!note.judged) {
             const tooLateTime = note.endTime + hitWindow50;
@@ -149,7 +147,7 @@ function draw() {
 
         const col = ((useBeatmapCombos && beatmapComboColors.length > 0) ? beatmapComboColors : DEFAULT_COMBO_COLORS)[note.comboColorIndex % (useBeatmapCombos && beatmapComboColors.length ? beatmapComboColors.length : 4)];
 
-        // ──────── JUDGMENT METER BAR (perfectly matched to circle) ────────
+        // Judgment meter bar
         if (note.type === 'circle' || note.type === 'slider') {
             const barHeight = 32;
             const barY = Y_CENTERED - barHeight / 2;
@@ -167,8 +165,7 @@ function draw() {
                 ctx.fillRect(barX, barY, barWidth, barHeight);
 
                 // Middle 100 window
-                const hitWindow100 = Math.max(0, 139.5 - (8 * beatmapOD));
-                const half100 = hitWindow100 * pxPerMs;
+                const half100 = Math.max(0, hitWindow100 * pxPerMs);
                 ctx.globalAlpha = note.isMissed ? 0.35 : 0.55;
                 ctx.fillStyle = note.isMissed 
                     ? 'rgba(200, 200, 100, 0.8)' 
@@ -176,8 +173,7 @@ function draw() {
                 ctx.fillRect(xStart - half100, barY + 4, half100 * 2, barHeight - 8);
 
                 // Inner 300 window
-                const hitWindow300 = Math.max(0, 79.5 - (6 * beatmapOD));
-                const half300 = hitWindow300 * pxPerMs;
+                const half300 = Math.max(0, hitWindow300 * pxPerMs);
                 ctx.globalAlpha = note.isMissed ? 0.40 : 0.80;
                 ctx.fillStyle = note.isMissed 
                     ? 'rgba(100, 255, 120, 0.9)' 
@@ -189,7 +185,6 @@ function draw() {
         }
 
         if (note.type === 'slider') {
-            // Slider body thickness = 95% of head diameter
             let trackDiam = hasHitCircleTexture && hitCircleImg ? judgmentDiameterPx * 0.95 : 20;
             const styles = getSliderStyles(COLORIZE_SLIDER_BODY ? [col.r, col.g, col.b] : sliderTrackOverride, sliderBorder, note.isMissed);
             const sw = Math.abs(xEnd - xStart) + trackDiam * 2;
@@ -214,7 +209,6 @@ function draw() {
             sctx.globalAlpha = 1; sctx.globalCompositeOperation = 'source-over';
             ctx.drawImage(sliderBuffer, 0, 0, sw, trackDiam * 2, xStart - trackDiam, Y_CENTERED - trackDiam, sw, trackDiam * 2);
 
-            // Slider ticks
             let currentBeatLength = 600;
             for (let tp of timingPoints) {
                 if (tp.time > note.startTime) break;
@@ -265,7 +259,7 @@ function draw() {
         ctx.globalAlpha = 1;
     }
 
-    // ──────── KEY VISUALIZATION (now fully scale-aware) ────────
+    // Key visualization (scale-aware)
     ctx.lineWidth = KEY_LINE_THICKNESS;
     ctx.lineCap = 'round';
     const gap = 4;
@@ -321,7 +315,10 @@ function draw() {
     
     ctx.font = '14px Arial';
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillText(`${(currentTime/1000).toFixed(2)}s | Speed: ${currentSpeed.toFixed(2)}x | ${isTimelineLocked ? 'LOCKED ✓' : 'syncing'}`, 15, 95);
+    
+    // ──────── LIVE DEBUG: shows exactly what the code is calculating ────────
+    const debugInfo = `${(currentTime/1000).toFixed(2)}s | Speed: ${currentSpeed.toFixed(2)}x | OD: ${beatmapOD.toFixed(1)} | 50w: ${hitWindow50.toFixed(1)}ms | diam: ${judgmentDiameterPx.toFixed(0)}px | ${isTimelineLocked ? 'LOCKED ✓' : 'syncing'}`;
+    ctx.fillText(debugInfo, 15, canvas.height - 10);
 
     if (SHOW_DEBUG_PANEL) {
         // debug panel unchanged
