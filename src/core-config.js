@@ -7,7 +7,7 @@ const ctx = canvas.getContext('2d');
 // ──────── USER CONFIG ────────
 const SPEED_MULTIPLIER = 1.0;
 let scale = 0.5;
-let playheadX = 2669;
+let playheadX = canvas.width * 0.75; // 3/4 of canvas width
 
 const COLORIZE_SLIDER_BODY = false; 
 let useBeatmapCombos = true;
