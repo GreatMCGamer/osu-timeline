@@ -16,6 +16,7 @@ const SPINNER_BAR_HEIGHT = 40;
 
 const TARGET_FPS = 480;
 const SHOW_DEBUG_PANEL = false;
+const SHOW_JUDGMENT_BARS = false;
 
 // ──────── KEYPRESS VISUALIZATION CONFIG ────────
 const KEY_LINE_THICKNESS = 20;

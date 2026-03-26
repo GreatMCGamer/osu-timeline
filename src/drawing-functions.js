@@ -154,7 +154,7 @@ function draw() {
         }
 
         // Judgment meter bar
-        if (note.type === 'circle' || note.type === 'slider') {
+        if ((note.type === 'circle' || note.type === 'slider') && SHOW_JUDGMENT_BARS) {
             const barHeight = 32;
             const barY = Y_CENTERED + yOffset - barHeight / 2;
             const barX = xStart - (judgmentDiameterPx / 2);
