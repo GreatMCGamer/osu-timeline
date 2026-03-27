@@ -41,9 +41,6 @@ const KEY_BOX_SPACING = 60;
 
 const TITLE_FONT_SIZE = 50;
 
-const sliderBuffer = document.createElement('canvas');
-const sctx = sliderBuffer.getContext('2d');
-
 let wsCommon;
 let wsPrecise;
 
@@ -82,10 +79,19 @@ let defaultTintedHitCircles = [];
 let beatmapTintedHitCircles = [];
 let hasHitCircleTexture = false;
 
+let hasSliderBodyTexture = false;
+let sliderBodyImg = null;
+let defaultTintedSliderBodies = [];
+let beatmapTintedSliderBodies = [];
 let sliderTickImg = null;
 let defaultTintedSliderTicks = [];
 let beatmapTintedSliderTicks = [];
 let hasSliderTickTexture = false;
+
+const sliderBuffer = document.createElement('canvas');
+const sctx = sliderBuffer.getContext('2d');
+
+let judgmentDiameterPx = 0;
 
 let isNewBeatmap = false;
 

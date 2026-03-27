@@ -39,6 +39,160 @@ function drawHitCircle(posX, colorIndex, isMissed = false, diameter = 20, yOffse
     ctx.globalAlpha = 1.0;
 }
 
+function getSliderTargetY(timestamp) {
+    let lane0 = false;
+    let lane1 = false;
+    
+    // Check keyStrokes for activity at this specific millisecond
+    for (let i = 0; i < keyStrokes.length; i++) {
+        const s = keyStrokes[i];
+        if (s.startTime > timestamp) continue;
+        if (s.endTime !== null && s.endTime < timestamp) continue;
+        
+        if (s.key === 'k1' || s.key === 'm1') lane0 = true;
+        else if (s.key === 'k2' || s.key === 'm2') lane1 = true;
+    }
+    
+    const laneDist = KEY_BOX_SPACING / 2;
+    if (lane0 && lane1) return Y_CENTERED;
+    if (lane0) return Y_CENTERED - laneDist;
+    if (lane1) return Y_CENTERED + laneDist;
+    return Y_CENTERED;
+}
+
+function getSnakyY(note, targetTime) {
+    const laneDist = KEY_BOX_SPACING / 2;
+    const ySpeed = laneDist / 100; // Speed required to cross 1 lane in 100ms
+    const step = 4; // Calculation resolution
+    
+    // Start at the lane of the initial hit
+    let currentY = Y_CENTERED;
+    const startTarget = getSliderTargetY(note.startTime);
+    currentY = startTarget;
+
+    // Simulate the "Follow" logic from start to targetTime
+    for (let t = note.startTime; t <= targetTime; t += step) {
+        const targetY = getSliderTargetY(t);
+        const dy = targetY - currentY;
+        if (Math.abs(dy) > 0.1) {
+            const move = ySpeed * step;
+            if (Math.abs(dy) <= move) currentY = targetY;
+            else currentY += Math.sign(dy) * move;
+        }
+    }
+    return currentY;
+}
+
+function drawSmoothSlider(note, xStart, xEnd, currentTime, pxPerMs, judgmentDiameterPx) {
+    const col = ((useBeatmapCombos && beatmapComboColors.length > 0) 
+        ? beatmapComboColors 
+        : DEFAULT_COMBO_COLORS)[note.comboColorIndex % (useBeatmapCombos && beatmapComboColors.length ? beatmapComboColors.length : 4)];
+    
+    const trackColor = (typeof sliderTrackOverride !== 'undefined' && sliderTrackOverride) 
+        ? sliderTrackOverride 
+        : [col.r, col.g, col.b];
+        
+    const borderColor = (typeof sliderBorder !== 'undefined' && sliderBorder) 
+        ? sliderBorder 
+        : [255, 255, 255];
+        
+    const styles = getSliderStyles(trackColor, borderColor, note.isMissed);
+    
+    const trackDiam = (judgmentDiameterPx && judgmentDiameterPx > 0) 
+        ? judgmentDiameterPx * 0.92 
+        : 35;
+
+    // ──────── BUILD SNAKY PATH (unchanged) ────────
+    const path = new Path2D();
+    const step = 4;
+    path.moveTo(xStart, getSnakyY(note, note.startTime));
+    for (let t = note.startTime + step; t <= note.endTime; t += step) {
+        path.lineTo(playheadX + (t - currentTime) * pxPerMs, getSnakyY(note, t));
+    }
+    path.lineTo(xEnd, getSnakyY(note, note.endTime));
+
+    // ──────── SCRATCH CANVAS SETUP (unchanged) ────────
+    if (!window.sliderScratch) {
+        window.sliderScratch = document.createElement('canvas');
+        window.sliderCtx = window.sliderScratch.getContext('2d');
+    }
+    const sCanvas = window.sliderScratch;
+    const sCtx = window.sliderCtx;
+    if (sCanvas.width !== canvas.width || sCanvas.height !== canvas.height) {
+        sCanvas.width = canvas.width;
+        sCanvas.height = canvas.height;
+    }
+    sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
+    sCtx.lineCap = 'round';
+    sCtx.lineJoin = 'round';
+
+    const bodyWidth = trackDiam * 0.82;   // main track body width (inside border)
+
+    // 1. Outer border (always solid — works with or without texture)
+    sCtx.lineWidth = trackDiam;
+    sCtx.strokeStyle = styles.border;
+    sCtx.stroke(path);
+
+    // 2. BODY: Texture OR layered gradient fallback
+    const activeTinted = (useBeatmapCombos && beatmapTintedSliderBodies && beatmapTintedSliderBodies.length > 0)
+        ? beatmapTintedSliderBodies
+        : defaultTintedSliderBodies;
+
+    const tintedBodyCanvas = activeTinted 
+        ? activeTinted[note.comboColorIndex % activeTinted.length] 
+        : null;
+
+    if (hasSliderBodyTexture && tintedBodyCanvas && tintedBodyCanvas.complete) {
+        // ──────── TEXTURE MODE (authentic osu! sliderbody) ────────
+        const pattern = sCtx.createPattern(tintedBodyCanvas, 'repeat');
+        if (pattern) {
+            sCtx.lineWidth = bodyWidth;
+            sCtx.strokeStyle = pattern;
+            sCtx.stroke(path);
+        }
+    } else {
+        // ──────── LAYERED GRADIENT FALLBACK (your tuned 4-layer version) ────────
+        // Solid base track body
+        sCtx.lineWidth = bodyWidth;
+        sCtx.strokeStyle = `rgb(${styles.trackBaseRgb})`;
+        sCtx.stroke(path);
+
+        // Soft radial gradient layers (smooth center glow)
+        const layers = [
+        { widthFactor: 1.0, alpha: 0.05, brightness: 0.10 },
+        { widthFactor: 0.9, alpha: 0.10, brightness: 0.20 },
+        { widthFactor: 0.8, alpha: 0.25, brightness: 0.30 },
+        { widthFactor: 0.7, alpha: 0.30, brightness: 0.40 },
+        { widthFactor: 0.6, alpha: 0.45, brightness: 0.50 },
+        { widthFactor: 0.5, alpha: 0.50, brightness: 0.60 },
+        { widthFactor: 0.4, alpha: 0.65, brightness: 0.70 },
+        { widthFactor: 0.3, alpha: 0.70, brightness: 0.80 },
+        { widthFactor: 0.2, alpha: 0.85, brightness: 0.90 },
+        { widthFactor: 0.1, alpha: 0.90, brightness: 1.00 }
+        ];
+
+        for (const layer of layers) {
+            const w = bodyWidth * layer.widthFactor;
+            const base = styles.trackBaseRgb.split(',').map(Number);
+            const high = styles.trackHighlightRgb.split(',').map(Number);
+            const r = Math.round(base[0] * (1 - layer.brightness) + high[0] * layer.brightness);
+            const g = Math.round(base[1] * (1 - layer.brightness) + high[1] * layer.brightness);
+            const b = Math.round(base[2] * (1 - layer.brightness) + high[2] * layer.brightness);
+
+            sCtx.globalAlpha = layer.alpha;
+            sCtx.lineWidth = w;
+            sCtx.strokeStyle = `rgb(${r},${g},${b})`;
+            sCtx.stroke(path);
+        }
+        sCtx.globalAlpha = 1.0;
+    }
+
+    // ──────── RENDER TO MAIN CANVAS (unchanged) ────────
+    ctx.globalAlpha = styles.alpha;
+    ctx.drawImage(sCanvas, 0, 0);
+    ctx.globalAlpha = 1.0;
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const now = performance.now();
@@ -117,16 +271,10 @@ function draw() {
 
         const col = ((useBeatmapCombos && beatmapComboColors.length > 0) ? beatmapComboColors : DEFAULT_COMBO_COLORS)[note.comboColorIndex % (useBeatmapCombos && beatmapComboColors.length ? beatmapComboColors.length : 4)];
 
-        // ──────── LANE OFFSET (aligns with key-press lines) ────────
-        let yOffset = 0;
-        if (note.hitLane !== undefined && note.hitLane >= 0) {
-            yOffset = (note.hitLane === 0 ? -1 : 1) * (KEY_BOX_SPACING / 2);
-        }
-
         // Judgment meter bar
         if ((note.type === 'circle' || note.type === 'slider') && SHOW_JUDGMENT_BARS) {
             const barHeight = 32;
-            const barY = Y_CENTERED + yOffset - barHeight / 2;
+            const barY = Y_CENTERED - barHeight / 2;
             const barX = xStart - (judgmentDiameterPx / 2);
             const barWidth = judgmentDiameterPx;
 
@@ -160,31 +308,9 @@ function draw() {
             }
         }
 
-        if (note.type === 'slider') {
-            let trackDiam = hasHitCircleTexture && hitCircleImg ? judgmentDiameterPx * 0.95 : 20;
-            const styles = getSliderStyles(COLORIZE_SLIDER_BODY ? [col.r, col.g, col.b] : sliderTrackOverride, sliderBorder, note.isMissed);
-            const sw = Math.abs(xEnd - xStart) + trackDiam * 2;
+if (note.type === 'slider') {
+            drawSmoothSlider(note, xStart, xEnd, currentTime, pxPerMs, judgmentDiameterPx);
             
-            if (sliderBuffer.width < sw || sliderBuffer.height < trackDiam * 2) {
-                sliderBuffer.width = sw; sliderBuffer.height = trackDiam * 2;
-            }
-            sctx.clearRect(0, 0, sw, trackDiam * 2);
-
-            const sP = {x: trackDiam, y: trackDiam}, eP = {x: sw - trackDiam, y: trackDiam};
-            sctx.lineCap = 'round'; sctx.lineWidth = trackDiam; sctx.strokeStyle = styles.border;
-            sctx.beginPath(); sctx.moveTo(sP.x, sP.y); sctx.lineTo(eP.x, eP.y); sctx.stroke();
-            sctx.globalCompositeOperation = 'destination-out';
-            sctx.lineWidth = trackDiam * 0.8; sctx.stroke();
-            sctx.globalCompositeOperation = 'destination-over';
-            sctx.globalAlpha = styles.alpha;
-            const grad = sctx.createLinearGradient(0, sP.y - trackDiam*0.5, 0, sP.y + trackDiam*0.5);
-            grad.addColorStop(0, `rgb(${styles.trackBaseRgb})`); grad.addColorStop(0.5, `rgb(${styles.trackHighlightRgb})`); grad.addColorStop(1, `rgb(${styles.trackBaseRgb})`);
-            sctx.strokeStyle = grad; sctx.lineWidth = trackDiam * 0.8;
-            sctx.beginPath(); sctx.moveTo(sP.x, sP.y); sctx.lineTo(eP.x, eP.y); sctx.stroke();
-            
-            sctx.globalAlpha = 1; sctx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(sliderBuffer, 0, 0, sw, trackDiam * 2, xStart - trackDiam, Y_CENTERED + yOffset - trackDiam, sw, trackDiam * 2);
-
             let currentBeatLength = 600;
             for (let tp of timingPoints) {
                 if (tp.time > note.startTime) break;
@@ -200,6 +326,9 @@ function draw() {
                     const frac = (tickTime - note.startTime) / sliderDuration;
                     if (frac >= 1) break;
                     const tickX = xStart + frac * (xEnd - xStart);
+                    
+                    // Use snaky Y position for the tick
+                    const tickY = getSnakyY(note, tickTime);
 
                     let tickCanvas = null;
                     if (note.isMissed && hasSliderTickTexture) {
@@ -214,11 +343,11 @@ function draw() {
                         const tickScaleFactor = 0.65 * (judgmentDiameterPx / refWidth);
                         const tickW = tickCanvas.width * tickScaleFactor;
                         const tickH = tickCanvas.height * tickScaleFactor;
-                        ctx.drawImage(tickCanvas, tickX - tickW / 2, Y_CENTERED + yOffset - tickH / 2, tickW, tickH);
+                        ctx.drawImage(tickCanvas, tickX - tickW / 2, tickY - tickH / 2, tickW, tickH);
                     } else {
                         ctx.fillStyle = note.isMissed ? `rgba(100,100,100,0.5)` : `rgb(${col.r},${col.g},${col.b})`;
                         ctx.beginPath();
-                        ctx.arc(tickX, Y_CENTERED + yOffset, 5.5, 0, Math.PI * 2);
+                        ctx.arc(tickX, tickY, 5.5, 0, Math.PI * 2);
                         ctx.fill();
                     }
                     tickTime += tickDelta;
@@ -230,7 +359,9 @@ function draw() {
         }
 
         if (note.type === 'circle' || note.type === 'slider') {
-            drawHitCircle(xStart, note.comboColorIndex, note.isMissed, judgmentDiameterPx, yOffset);
+            // Use snaky Y position for hit circles
+            const circleY = getSnakyY(note, note.startTime);
+            drawHitCircle(xStart, note.comboColorIndex, note.isMissed, judgmentDiameterPx, circleY - Y_CENTERED);
         }
         ctx.globalAlpha = 1;
     }

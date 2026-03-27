@@ -9,6 +9,10 @@ function loadTextures() {
         hitCircleImg = null;
         hitCircleOverlayImg = null;
         sliderTickImg = null;
+        hasSliderBodyTexture = false;
+        sliderBodyImg = null;
+        defaultTintedSliderBodies = [];
+        beatmapTintedSliderBodies = [];
     }
 
     const tosuUrl = 'http://127.0.0.1:24050/files/skin/';
@@ -29,6 +33,7 @@ function loadTextures() {
             
             if (image === hitCircleImg) hasHitCircleTexture = true; 
             if (image === sliderTickImg) hasSliderTickTexture = true;
+            if (image === sliderBodyImg) hasSliderBodyTexture = true;
             
             createTintedVersions(); 
         };
@@ -63,8 +68,10 @@ function loadTextures() {
     hitCircleImg = new Image();
     hitCircleOverlayImg = new Image();
     sliderTickImg = new Image();
+    sliderBodyImg = new Image();
     
     // Try @2x first, then fallback to normal
+    loadImageWithFallback(sliderBodyImg, tosuUrl + 'sliderbody@2x.png', tosuUrl + 'sliderbody.png');
     loadImageWithFallback(hitCircleImg, tosuUrl + 'hitcircle@2x.png', tosuUrl + 'hitcircle.png');
     loadImageWithFallback(hitCircleOverlayImg, tosuUrl + 'hitcircleoverlay@2x.png', tosuUrl + 'hitcircleoverlay.png');
     loadImageWithFallback(sliderTickImg, tosuUrl + 'sliderscorepoint@2x.png', tosuUrl + 'sliderscorepoint.png');
@@ -86,6 +93,17 @@ function createTintedVersions() {
         
         if (typeof beatmapComboColors !== 'undefined' && beatmapComboColors.length) {
             beatmapTintedSliderTicks = beatmapComboColors.map(c => tintImage(sliderTickImg, `rgb(${c.r},${c.g},${c.b})`));
+        }
+    }
+    if (sliderBodyImg && sliderBodyImg.complete && sliderBodyImg.naturalWidth > 0) {
+        const defaultColors = typeof DEFAULT_COMBO_COLORS !== 'undefined' 
+            ? DEFAULT_COMBO_COLORS 
+            : [{r:255,g:192,b:0}, {r:0,g:202,b:0}, {r:18,g:124,b:255}, {r:242,g:24,b:57}];
+        
+        defaultTintedSliderBodies = defaultColors.map(c => tintImage(sliderBodyImg, `rgb(${c.r},${c.g},${c.b})`));
+        
+        if (typeof beatmapComboColors !== 'undefined' && beatmapComboColors.length) {
+            beatmapTintedSliderBodies = beatmapComboColors.map(c => tintImage(sliderBodyImg, `rgb(${c.r},${c.g},${c.b})`));
         }
     }
 }
