@@ -30,7 +30,7 @@ const TEXTURE_SCALE = 0.4;
 const SPINNER_BAR_HEIGHT = 40;
 
 const TARGET_FPS = 480;
-const SHOW_DEBUG_PANEL = true;
+const SHOW_DEBUG_PANEL = false;
 const SHOW_JUDGMENT_BARS = false;
 
 // ──────── KEYPRESS VISUALIZATION CONFIG ────────
