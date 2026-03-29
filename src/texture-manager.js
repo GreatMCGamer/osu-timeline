@@ -1,10 +1,43 @@
 // ──────── TEXTURE MANAGER ────────
 // Loads skin assets, handles @2x fallbacks, and creates color-tinted variations.
+// NEW: hitcircle + hitcircleoverlay are now pre-combined into a single image.
+
+if (typeof hitCircleCombinedImg === 'undefined') {
+    hitCircleCombinedImg = null;   // Safe global initialization
+}s
+
+// ──────── NEW HELPER: Combine hitcircle (tinted or plain) with overlay ────────
+// Now at TOP LEVEL so createTintedVersions() can always see it
+function combineWithOverlay(base, overlayImg) {
+    const baseWidth  = base instanceof HTMLImageElement ? base.width  : base.width;
+    const baseHeight = base instanceof HTMLImageElement ? base.height : base.height;
+
+    const combined = document.createElement('canvas');
+    combined.width  = baseWidth;
+    combined.height = baseHeight;
+    const ctx = combined.getContext('2d');
+
+    // Draw base (tinted or original)
+    ctx.drawImage(base, 0, 0, baseWidth, baseHeight);
+
+    // Draw overlay on top (if loaded)
+    if (overlayImg && overlayImg.complete && overlayImg.naturalWidth > 0) {
+        ctx.drawImage(overlayImg, 0, 0, baseWidth, baseHeight);
+    }
+
+    return combined;
+}
 
 function loadTextures() {
+    const cacheBustStr = (isNewBeatmap || isNewSkin) ? `?v=${Date.now()}` : '';
 
     // Reset the isNewBeatmap flag BEFORE texture loading begins to prevent race conditions
     if (isNewBeatmap || isNewSkin) {
+        if(hitCircleImg) hitCircleImg.src = ""; 
+        if(hitCircleOverlayImg) hitCircleOverlayImg.src = "";
+        if(sliderTickImg) sliderTickImg.src = "";
+        if(sliderBodyImg) sliderBodyImg.src = "";
+
         hasHitCircleTexture = false;
         hasHitCircleOverlayImg = false;
         hasSliderTickTexture = false;
@@ -14,15 +47,17 @@ function loadTextures() {
         hitCircleOverlayImg = null;
         sliderTickImg = null;
         sliderBodyImg = null;
-
-        defaultTintedHitCircles = [];
-        beatmapTintedHitCircles = [];
-        defaultTintedSliderTicks = [];
-        beatmapTintedSliderTicks = [];
-        defaultTintedSliderBodies = [];
-        beatmapTintedSliderBodies = [];
+        hitCircleCombinedImg = null;          // ← combined image for hitcircles
         
+        defaultTintedHitCircles.length = 0;
+        beatmapTintedHitCircles.length = 0;
+        defaultTintedSliderTicks.length = 0;
+        beatmapTintedSliderTicks.length = 0;
+        defaultTintedSliderBodies.length = 0;
+        beatmapTintedSliderBodies.length = 0;
+
         isNewSkin = false;
+        isNewBeatmap = false;
     }
 
     const tosuUrl = 'http://127.0.0.1:24050/files/skin/';
@@ -37,7 +72,6 @@ function loadTextures() {
             if (triedFallback && !isUpscaled) {
                 isUpscaled = true;
                 upscaleTextureTo2x(image);
-                // Exit immediately because replacing image.src with data URL triggers onload again!
                 return; 
             }
             
@@ -50,12 +84,10 @@ function loadTextures() {
         };
 
         image.onerror = () => {
-            // If @2x fails, try normal variant
             if (!triedFallback) {
                 triedFallback = true;
                 image.src = fallbackSrc;
             } else {
-                // If normal variant ALSO fails, prevent an infinite network loop by clearing onerror
                 image.onerror = null;
             }
         };
@@ -89,39 +121,55 @@ function loadTextures() {
     sliderBodyImg.crossOrigin = "Anonymous";
     
     // Try @2x first, then fallback to normal
-    loadImageWithFallback(sliderBodyImg, tosuUrl + 'sliderbody@2x.png', tosuUrl + 'sliderbody.png');
-    loadImageWithFallback(hitCircleImg, tosuUrl + 'hitcircle@2x.png', tosuUrl + 'hitcircle.png');
-    loadImageWithFallback(hitCircleOverlayImg, tosuUrl + 'hitcircleoverlay@2x.png', tosuUrl + 'hitcircleoverlay.png');
-    loadImageWithFallback(sliderTickImg, tosuUrl + 'sliderscorepoint@2x.png', tosuUrl + 'sliderscorepoint.png');
+    loadImageWithFallback(sliderBodyImg, tosuUrl + 'sliderbody@2x.png' + cacheBustStr, tosuUrl + 'sliderbody.png' + cacheBustStr);
+    loadImageWithFallback(hitCircleImg, tosuUrl + 'hitcircle@2x.png' + cacheBustStr, tosuUrl + 'hitcircle.png' + cacheBustStr);
+    loadImageWithFallback(hitCircleOverlayImg, tosuUrl + 'hitcircleoverlay@2x.png' + cacheBustStr, tosuUrl + 'hitcircleoverlay.png' + cacheBustStr);
+    loadImageWithFallback(sliderTickImg, tosuUrl + 'sliderscorepoint@2x.png' + cacheBustStr, tosuUrl + 'sliderscorepoint.png' + cacheBustStr);
 }
 
 function createTintedVersions() {
     if (hitCircleImg && hitCircleImg.complete && hitCircleImg.naturalWidth > 0) {
         const defaultColors = typeof DEFAULT_COMBO_COLORS !== 'undefined' ? DEFAULT_COMBO_COLORS : [{r:255,g:192,b:0}, {r:0,g:202,b:0}, {r:18,g:124,b:255}, {r:242,g:24,b:57}];
-        defaultTintedHitCircles = defaultColors.map(c => tintImage(hitCircleImg, `rgb(${c.r},${c.g},${c.b})`));
+        
+        // 7. DO NOT USE .MAP(). Clear and push to the existing arrays.
+        defaultTintedHitCircles.length = 0;
+        defaultColors.forEach(c => {
+            const tintedBase = tintImage(hitCircleImg, `rgb(${c.r},${c.g},${c.b})`);
+            defaultTintedHitCircles.push(combineWithOverlay(tintedBase, hitCircleOverlayImg));
+        });
         
         if (typeof beatmapComboColors !== 'undefined' && beatmapComboColors.length) {
-            beatmapTintedHitCircles = beatmapComboColors.map(c => tintImage(hitCircleImg, `rgb(${c.r},${c.g},${c.b})`));
+            beatmapTintedHitCircles.length = 0;
+            beatmapComboColors.forEach(c => {
+                const tintedBase = tintImage(hitCircleImg, `rgb(${c.r},${c.g},${c.b})`);
+                beatmapTintedHitCircles.push(combineWithOverlay(tintedBase, hitCircleOverlayImg));
+            });
         }
+
+        hitCircleCombinedImg = combineWithOverlay(hitCircleImg, hitCircleOverlayImg);
     }
     
     if (sliderTickImg && sliderTickImg.complete && sliderTickImg.naturalWidth > 0) {
         const defaultColors = typeof DEFAULT_COMBO_COLORS !== 'undefined' ? DEFAULT_COMBO_COLORS : [{r:255,g:192,b:0}, {r:0,g:202,b:0}, {r:18,g:124,b:255}, {r:242,g:24,b:57}];
-        defaultTintedSliderTicks = defaultColors.map(c => tintImage(sliderTickImg, `rgb(${c.r},${c.g},${c.b})`));
+        
+        defaultTintedSliderTicks.length = 0;
+        defaultColors.forEach(c => defaultTintedSliderTicks.push(tintImage(sliderTickImg, `rgb(${c.r},${c.g},${c.b})`)));
         
         if (typeof beatmapComboColors !== 'undefined' && beatmapComboColors.length) {
-            beatmapTintedSliderTicks = beatmapComboColors.map(c => tintImage(sliderTickImg, `rgb(${c.r},${c.g},${c.b})`));
+            beatmapTintedSliderTicks.length = 0;
+            beatmapComboColors.forEach(c => beatmapTintedSliderTicks.push(tintImage(sliderTickImg, `rgb(${c.r},${c.g},${c.b})`)));
         }
     }
+
     if (sliderBodyImg && sliderBodyImg.complete && sliderBodyImg.naturalWidth > 0) {
-        const defaultColors = typeof DEFAULT_COMBO_COLORS !== 'undefined' 
-            ? DEFAULT_COMBO_COLORS 
-            : [{r:255,g:192,b:0}, {r:0,g:202,b:0}, {r:18,g:124,b:255}, {r:242,g:24,b:57}];
+        const defaultColors = typeof DEFAULT_COMBO_COLORS !== 'undefined' ? DEFAULT_COMBO_COLORS : [{r:255,g:192,b:0}, {r:0,g:202,b:0}, {r:18,g:124,b:255}, {r:242,g:24,b:57}];
         
-        defaultTintedSliderBodies = defaultColors.map(c => tintImage(sliderBodyImg, `rgb(${c.r},${c.g},${c.b})`));
+        defaultTintedSliderBodies.length = 0;
+        defaultColors.forEach(c => defaultTintedSliderBodies.push(tintImage(sliderBodyImg, `rgb(${c.r},${c.g},${c.b})`)));
         
         if (typeof beatmapComboColors !== 'undefined' && beatmapComboColors.length) {
-            beatmapTintedSliderBodies = beatmapComboColors.map(c => tintImage(sliderBodyImg, `rgb(${c.r},${c.g},${c.b})`));
+            beatmapTintedSliderBodies.length = 0;
+            beatmapComboColors.forEach(c => beatmapTintedSliderBodies.push(tintImage(sliderBodyImg, `rgb(${c.r},${c.g},${c.b})`)));
         }
     }
 }

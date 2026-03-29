@@ -79,6 +79,8 @@ let defaultTintedHitCircles = [];
 let beatmapTintedHitCircles = [];
 let hasHitCircleTexture = false;
 let hasHitCircleOverlayImg = false;
+let hitCircleCombinedImg = null;
+let isLoadingTextures = false;
 
 let hasSliderTickTexture = false;
 let hasSliderBodyTexture = false;

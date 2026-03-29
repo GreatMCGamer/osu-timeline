@@ -7,25 +7,31 @@ function drawHitCircle(posX, colorIndex, isMissed = false, diameter = 20, yOffse
     
     ctx.globalAlpha = isMissed ? 0.4 : 1.0;
 
-    if (isMissed && hasHitCircleTexture && hitCircleImg) {
-        const w = diameter;
-        const h = diameter;
-        const dx = posX - w/2, dy = Y_CENTERED + yOffset - h/2;
-        ctx.drawImage(hitCircleImg, dx, dy, w, h);
-        if (hitCircleOverlayImg && hitCircleOverlayImg.complete) ctx.drawImage(hitCircleOverlayImg, dx, dy, w, h);
-        ctx.globalAlpha = 1.0;
-        return;
-    }
+    // ──────── NEW: ONLY use the pre-combined image (no separate overlay draw) ────────
+    if (hasHitCircleTexture) {
+        let toDraw = null;
 
-    const activeTinted = (useBeatmapCombos && beatmapTintedHitCircles.length > 0) ? beatmapTintedHitCircles : defaultTintedHitCircles;
-    const tintedCanvas = activeTinted[colorIndex % activeTinted.length];
-    if (hasHitCircleTexture && tintedCanvas) {
-        const w = diameter;
-        const h = diameter;
-        const dx = posX - w/2, dy = Y_CENTERED + yOffset - h/2;
-        ctx.drawImage(tintedCanvas, dx, dy, w, h);
-        if (hitCircleOverlayImg && hitCircleOverlayImg.complete) ctx.drawImage(hitCircleOverlayImg, dx, dy, w, h);
+        if (isMissed) {
+            toDraw = hitCircleCombinedImg;                    // non-tinted + overlay
+        } else {
+            const activeTinted = (useBeatmapCombos && beatmapTintedHitCircles.length > 0) 
+                ? beatmapTintedHitCircles 
+                : defaultTintedHitCircles;
+            toDraw = activeTinted[colorIndex % activeTinted.length];
+        }
+
+        if (toDraw) {
+            const w = diameter;
+            const h = diameter;
+            const dx = posX - w/2;
+            const dy = Y_CENTERED + yOffset - h/2;
+            ctx.drawImage(toDraw, dx, dy, w, h);
+        } else {
+            // Extremely rare fallback (should never hit if hasHitCircleTexture is true)
+            drawFallbackCircle(posX, colorIndex, isMissed, diameter, yOffset);
+        }
     } else {
+        // Original procedural fallback when no texture is loaded
         if (isMissed) {
             ctx.fillStyle = `rgba(100, 100, 100, 0.5)`;
         } else {
@@ -36,7 +42,21 @@ function drawHitCircle(posX, colorIndex, isMissed = false, diameter = 20, yOffse
         ctx.arc(posX, Y_CENTERED + yOffset, diameter / 2, 0, Math.PI*2); 
         ctx.fill();
     }
+
     ctx.globalAlpha = 1.0;
+}
+
+// Tiny helper for the ultra-rare case where combined image is missing
+function drawFallbackCircle(posX, colorIndex, isMissed, diameter, yOffset) {
+    if (isMissed) {
+        ctx.fillStyle = `rgba(100, 100, 100, 0.5)`;
+    } else {
+        const col = (useBeatmapCombos && beatmapComboColors.length ? beatmapComboColors : DEFAULT_COMBO_COLORS)[colorIndex % 4];
+        ctx.fillStyle = `rgb(${col.r},${col.g},${col.b})`;
+    }
+    ctx.beginPath(); 
+    ctx.arc(posX, Y_CENTERED + yOffset, diameter / 2, 0, Math.PI*2); 
+    ctx.fill();
 }
 
 function getSliderTargetY(timestamp) {
