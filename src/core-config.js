@@ -78,7 +78,9 @@ let hitCircleOverlayImg = null;
 let defaultTintedHitCircles = [];
 let beatmapTintedHitCircles = [];
 let hasHitCircleTexture = false;
+let hasHitCircleOverlayImg = false;
 
+let hasSliderTickTexture = false;
 let hasSliderBodyTexture = false;
 let sliderBodyImg = null;
 let defaultTintedSliderBodies = [];
@@ -86,7 +88,7 @@ let beatmapTintedSliderBodies = [];
 let sliderTickImg = null;
 let defaultTintedSliderTicks = [];
 let beatmapTintedSliderTicks = [];
-let hasSliderTickTexture = false;
+let lastSkinFolder = '';
 
 const sliderBuffer = document.createElement('canvas');
 const sctx = sliderBuffer.getContext('2d');
@@ -94,6 +96,7 @@ const sctx = sliderBuffer.getContext('2d');
 let judgmentDiameterPx = 0;
 
 let isNewBeatmap = false;
+let isNewSkin = false;
 
 const DEFAULT_COMBO_COLORS = [
     { r: 255, g: 192, b: 0 },

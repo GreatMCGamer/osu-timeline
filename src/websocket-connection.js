@@ -9,8 +9,17 @@ function connect() {
     wsCommon.onmessage = (e) => {
         const data = JSON.parse(e.data);
         const now = performance.now();
-        if (data.state?.name) gameStateName = data.state.name;
         
+        if (data.folders?.skin !== undefined) {
+            if (data.folders.skin !== lastSkinFolder) {
+                isNewSkin = true;
+                lastSkinFolder = data.folders.skin;
+                // Trigger the reload and tell it to force a reset
+                loadTextures(); 
+            }
+        }
+
+        if (data.state?.name) gameStateName = data.state.name;
         if (data.beatmap) {
             mapTitle = `${data.beatmap.artist} - ${data.beatmap.title} [${data.beatmap.version || 'Unknown'}]`;
             const cs = data.beatmap.checksum;

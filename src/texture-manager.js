@@ -2,17 +2,27 @@
 // Loads skin assets, handles @2x fallbacks, and creates color-tinted variations.
 
 function loadTextures() {
+
     // Reset the isNewBeatmap flag BEFORE texture loading begins to prevent race conditions
-    if (isNewBeatmap) {
+    if (isNewBeatmap || isNewSkin) {
         hasHitCircleTexture = false;
+        hasHitCircleOverlayImg = false;
         hasSliderTickTexture = false;
+        hasSliderBodyTexture = false;
+        
         hitCircleImg = null;
         hitCircleOverlayImg = null;
         sliderTickImg = null;
-        hasSliderBodyTexture = false;
         sliderBodyImg = null;
+
+        defaultTintedHitCircles = [];
+        beatmapTintedHitCircles = [];
+        defaultTintedSliderTicks = [];
+        beatmapTintedSliderTicks = [];
         defaultTintedSliderBodies = [];
         beatmapTintedSliderBodies = [];
+        
+        isNewSkin = false;
     }
 
     const tosuUrl = 'http://127.0.0.1:24050/files/skin/';
@@ -32,6 +42,7 @@ function loadTextures() {
             }
             
             if (image === hitCircleImg) hasHitCircleTexture = true; 
+            if (image === hitCircleOverlayImg) hasHitCircleOverlayImg = true;
             if (image === sliderTickImg) hasSliderTickTexture = true;
             if (image === sliderBodyImg) hasSliderBodyTexture = true;
             
@@ -66,9 +77,16 @@ function loadTextures() {
     }
 
     hitCircleImg = new Image();
+    hitCircleImg.crossOrigin = "Anonymous";
+    
     hitCircleOverlayImg = new Image();
+    hitCircleOverlayImg.crossOrigin = "Anonymous";
+    
     sliderTickImg = new Image();
+    sliderTickImg.crossOrigin = "Anonymous";
+    
     sliderBodyImg = new Image();
+    sliderBodyImg.crossOrigin = "Anonymous";
     
     // Try @2x first, then fallback to normal
     loadImageWithFallback(sliderBodyImg, tosuUrl + 'sliderbody@2x.png', tosuUrl + 'sliderbody.png');
