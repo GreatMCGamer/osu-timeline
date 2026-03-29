@@ -135,16 +135,16 @@ function drawSmoothSlider(note, xStart, xEnd, currentTime, pxPerMs, judgmentDiam
 
         // Soft radial gradient layers (smooth center glow)
         const layers = [
-        { widthFactor: 1.0, alpha: 0.05, brightness: 0.10 },
-        { widthFactor: 0.9, alpha: 0.10, brightness: 0.20 },
-        { widthFactor: 0.8, alpha: 0.25, brightness: 0.30 },
-        { widthFactor: 0.7, alpha: 0.30, brightness: 0.40 },
-        { widthFactor: 0.6, alpha: 0.45, brightness: 0.50 },
-        { widthFactor: 0.5, alpha: 0.50, brightness: 0.60 },
-        { widthFactor: 0.4, alpha: 0.65, brightness: 0.70 },
-        { widthFactor: 0.3, alpha: 0.70, brightness: 0.80 },
-        { widthFactor: 0.2, alpha: 0.85, brightness: 0.90 },
-        { widthFactor: 0.1, alpha: 0.90, brightness: 1.00 }
+            { widthFactor: 1.0, alpha: 0.05, brightness: 0.10 }, // Gentle start
+            { widthFactor: 0.9, alpha: 0.50, brightness: 0.18 }, // Small, natural jump
+            { widthFactor: 0.8, alpha: 0.50, brightness: 0.32 },
+            { widthFactor: 0.7, alpha: 0.50, brightness: 0.48 }, // Building momentum
+            { widthFactor: 0.6, alpha: 0.50, brightness: 0.62 },
+            { widthFactor: 0.5, alpha: 0.50, brightness: 0.75 }, // Crossing the midpoint
+            { widthFactor: 0.4, alpha: 0.50, brightness: 0.85 },
+            { widthFactor: 0.3, alpha: 0.50, brightness: 0.92 },
+            { widthFactor: 0.2, alpha: 0.50, brightness: 0.97 }, // Still climbing...
+            { widthFactor: 0.1, alpha: 0.50, brightness: 1.00 }  // Reaches peak at the very end
         ];
 
         for (const layer of layers) {
