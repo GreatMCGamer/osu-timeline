@@ -4,7 +4,7 @@
 
 if (typeof hitCircleCombinedImg === 'undefined') {
     hitCircleCombinedImg = null;   // Safe global initialization
-}s
+}
 
 // ──────── NEW HELPER: Combine hitcircle (tinted or plain) with overlay ────────
 // Now at TOP LEVEL so createTintedVersions() can always see it
